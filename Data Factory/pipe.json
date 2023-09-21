@@ -1,0 +1,95 @@
+{
+    "name": "Function-Pipe",
+    "properties": {
+        "activities": [
+            {
+                "name": "ForEach1",
+                "type": "ForEach",
+                "dependsOn": [],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@range(1,10)",
+                        "type": "Expression"
+                    },
+                    "isSequential": true,
+                    "activities": [
+                        {
+                            "name": "my-function-dev",
+                            "type": "AzureFunctionActivity",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "0.12:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "functionName": "KafkaProducer",
+                                "method": "GET"
+                            },
+                            "linkedServiceName": {
+                                "referenceName": "AzureFunction1",
+                                "type": "LinkedServiceReference"
+                            }
+                        },
+                        {
+                            "name": "Wait1",
+                            "type": "Wait",
+                            "dependsOn": [
+                                {
+                                    "activity": "my-function-dev",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "userProperties": [],
+                            "typeProperties": {
+                                "waitTimeInSeconds": 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Run_DLT",
+                "type": "WebActivity",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "url": {
+                        "value": "https://<DATABRICKS-ID>.azuredatabricks.net/api/2.0/pipelines/<DLT-ID>/updates",
+                        "type": "Expression"
+                    },
+                    "method": "POST",
+                    "body": {
+                        "value": "{ \"full_refresh\": \"true\" }",
+                        "type": "Expression"
+                    },
+                    "authentication": {
+                        "type": "MSI",
+                        "resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+                    }
+                }
+            }
+        ],
+        "annotations": []
+    }
+}
